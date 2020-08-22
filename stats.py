@@ -6,6 +6,38 @@ import plotly.graph_objects as go
 import plotly.express as px
 from rvdata import read_from_file
 
+def add_range_slider(fig):
+    # https://plotly.com/python/range-slider/#range-slider-with-vertically-stacked-subplots
+    fig.update_layout(
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1,
+                        label="1m",
+                        step="month",
+                        stepmode="backward"),
+                    dict(count=6,
+                        label="6m",
+                        step="month",
+                        stepmode="backward"),
+                    dict(count=1,
+                        label="YTD",
+                        step="year",
+                        stepmode="todate"),
+                    dict(count=1,
+                        label="1y",
+                        step="year",
+                        stepmode="backward"),
+                    dict(step="all")
+                ])
+            ),
+            rangeslider=dict(
+                visible=True
+            ),
+            type="date"
+        )
+    )
+
 buy_df, deposit_df, balance_df = read_from_file("rv.html")
 
 hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
@@ -73,6 +105,7 @@ fig_balance.add_trace(
         name="Negative",
         line=dict(color='red')))
 fig_balance['layout']['title'] = "Account balance"
+add_range_slider(fig_balance)
 
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 
@@ -82,6 +115,7 @@ app.layout = html.Div(children=[
     html.Div(children='''
         Your RV data, visualized!.
     '''),
+
     html.H3(children="Top buys"),
 
     html.Div(children=[
