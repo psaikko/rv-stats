@@ -80,6 +80,10 @@ buy_df["weekday"] = buy_df["date"].map(lambda d : d.weekday())
 buy_df["month"] = buy_df["date"].map(lambda d : d.month)
 buy_df["hour"] = buy_df["date"].map(lambda d : d.hour)
 
+deposit_df["weekday"] = deposit_df["date"].map(lambda d : d.weekday())
+deposit_df["month"] = deposit_df["date"].map(lambda d : d.month)
+deposit_df["hour"] = deposit_df["date"].map(lambda d : d.hour)
+
 hourly = buy_df.groupby("hour", as_index=False)
 print(hourly["price_cents"].sum())
 print(hourly["price_cents"].count())
@@ -91,14 +95,20 @@ hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hou
 print(hourly_daily_mat.values)
 
 fig1 = px.histogram(buy_df,
+    labels={'price_cents':"purchases", 'hour':"Hour of day"},
     x="hour", 
     y="price_cents", 
     nbins=24)
+fig1['layout']['title'] = "Total purchases by hour"
 
-fig2 = go.Figure(data=go.Heatmap(
-    z=hourly_daily_mat.values,
-    x=sorted(buy_df["weekday"].unique()), 
-    y=sorted(buy_df["hour"].unique())))
+fig2 = go.Figure(
+    data=go.Heatmap(
+        z=hourly_daily_mat.fillna(0).values,
+        x=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], 
+        y=sorted(buy_df["hour"].unique()))
+)
+fig2['layout']['yaxis']['autorange'] = "reversed"
+fig2['layout']['title'] = "Activity map"
 
 fig3 = go.Figure(data=[
     go.Scatter(x=buy_df["date"], y=buy_df["cumulative_buys"], mode="lines", name="purchases"),
