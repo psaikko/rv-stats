@@ -1,3 +1,5 @@
 requests
 dash
 lxml
+pandas
+cssselect

@@ -13,7 +13,8 @@ Ensure you have python 3.6.9 or newer.
 To run:
 ```
 python3 -m venv venv
-pip install -r requirements
+. ./venv/bin/activate
+pip install -r requirements.txt
 python stats.py
 ```
 
