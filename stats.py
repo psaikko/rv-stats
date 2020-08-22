@@ -92,16 +92,6 @@ fig_balance.add_trace(
 fig_balance['layout']['title'] = "Account balance"
 add_range_slider(fig_balance)
 
-coffee_df = buy_df[buy_df["item"] == "Coffee"]
-fig_coffee = px.histogram(coffee_df,
-    labels={'price_cents':"coffees", 'hour':"Hour of day"},
-    x="hour", 
-    y="price_cents",
-    histfunc="count",
-    nbins=24)
-fig_coffee['layout']['title'] = "Total coffee consumption by hour"
-fig_coffee.update_traces(marker_color='saddlebrown')
-
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 
 app.layout = html.Div(children=[
@@ -134,18 +124,22 @@ app.layout = html.Div(children=[
         )
     ]),
 
-    html.Div(children=[
-        html.Div(
-            dcc.Graph(
-                id='hourly-coffee',
-                figure=fig_coffee
-            ), style={'display': 'inline-block'}),
-        html.Div(
-            dcc.Graph(
-                id='time-heatmap',
-                figure=fig_heatmap
-            ), style={'display': 'inline-block'})
+    html.Div([
+        dcc.Graph(
+            id='hourly-by-item'
+        ),
+        dcc.Dropdown(
+            id='item-dropdown',
+            options=[{'label': i, 'value': i} for i in sorted(buy_df["item"].unique())],
+            value='Coffee'
+        )
     ]),
+
+    html.Div(
+        dcc.Graph(
+            id='time-heatmap',
+            figure=fig_heatmap
+        ), style={'display': 'inline-block'}),
 
     html.Div(children=[
         html.Div(
@@ -165,14 +159,37 @@ app.layout = html.Div(children=[
     [Input('year-range-slider', 'value')])
 def update_hourly_figure(selected_range):
     range_df = buy_df[buy_df["year"].between(selected_range[0], selected_range[1], inclusive=True)]
-    fig_hourly = px.histogram(range_df,
-        labels={'price_cents':"purchases", 'hour':"Hour of day"},
-        x="hour", 
-        y="price_cents",
-        histfunc="count",
-        nbins=24)
-    fig_hourly['layout']['title'] = "Total purchases by hour from {} to {}".format(*selected_range)
+    fig_hourly = go.Figure()
+    fig_hourly.add_trace(go.Histogram(
+        x = range_df["hour"],
+        y = range_df["price_cents"],
+        histfunc = "count",
+        xbins=dict(start=0,end=24,size=1)
+    ))
+    fig_hourly.update_layout(
+        title_text = "Total purchases by hour from {} to {}".format(*selected_range),
+        xaxis = {"range":[0,24]}
+    )
     return fig_hourly
+
+@app.callback(Output('hourly-by-item','figure'),
+    [Input('item-dropdown', 'value')])
+def update_item_figure(selected_item):
+    item_df = buy_df[buy_df["item"] == selected_item]
+    fig_item = go.Figure()
+    fig_item.add_trace(go.Histogram(
+        x=item_df["hour"],
+        y=item_df["price_cents"],
+        histfunc="count",
+        xbins=dict(start=0,end=24,size=1)
+    ))
+    fig_item.update_layout(
+        title_text = "{} purchases by hour".format(selected_item),
+        xaxis = {"range":[0,24]}
+    )
+    if selected_item == "Coffee":
+        fig_item.update_traces(marker_color='saddlebrown')
+    return fig_item
 
 if __name__ == '__main__':
     app.run_server(debug=True) 
