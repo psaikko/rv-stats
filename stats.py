@@ -101,6 +101,15 @@ fig1 = px.histogram(buy_df,
     nbins=24)
 fig1['layout']['title'] = "Total purchases by hour"
 
+fig_coffee = px.histogram(buy_df[buy_df["item"] == "Coffee"],
+    labels={'price_cents':"coffees", 'hour':"Hour of day"},
+    x="hour", 
+    y="price_cents",
+    histfunc="count",
+    nbins=24)
+fig_coffee['layout']['title'] = "Total coffee consumption by hour"
+fig_coffee.update_traces(marker_color='saddlebrown')
+
 fig2 = go.Figure(
     data=go.Heatmap(
         z=hourly_daily_mat.fillna(0).values,
@@ -128,6 +137,10 @@ app.layout = html.Div(children=[
     dcc.Graph(
         id='hourly-buys',
         figure=fig1
+    ),
+    dcc.Graph(
+        id='hourly-coffee',
+        figure=fig_coffee
     ),
     dcc.Graph(
         id='time-heatmap',
