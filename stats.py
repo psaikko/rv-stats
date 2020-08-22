@@ -64,10 +64,17 @@ for e in events:
         buy_data.append(buy_record)
 
 buy_df = pd.DataFrame.from_records(buy_data)
+buy_df.sort_values(by=["date"], inplace=True)
+
+deposit_df = pd.DataFrame.from_records(deposit_data)
+deposit_df.sort_values(by=["date"], inplace=True)
 
 print(buy_df.describe())
 print(buy_df.head())
 print(buy_df["item"].nunique())
+
+buy_df["cumulative_buys"] = buy_df["price_cents"].cumsum()
+deposit_df["cumulative_deposits"] = deposit_df["amount_cents"].cumsum()
 
 buy_df["weekday"] = buy_df["date"].map(lambda d : d.weekday())
 buy_df["month"] = buy_df["date"].map(lambda d : d.month)
@@ -93,6 +100,12 @@ fig2 = go.Figure(data=go.Heatmap(
     x=sorted(buy_df["weekday"].unique()), 
     y=sorted(buy_df["hour"].unique())))
 
+fig3 = go.Figure(data=[
+    go.Scatter(x=buy_df["date"], y=buy_df["cumulative_buys"], mode="lines", name="purchases"),
+    go.Scatter(x=deposit_df["date"], y=deposit_df["cumulative_deposits"], mode="lines", name="deposits")
+])
+
+
 app = dash.Dash(__name__)
 
 app.layout = html.Div(children=[
@@ -106,10 +119,13 @@ app.layout = html.Div(children=[
         id='hourly-buys',
         figure=fig1
     ),
-
     dcc.Graph(
         id='time-heatmap',
         figure=fig2
+    ),
+    dcc.Graph(
+        id="cumulative-buys",
+        figure=fig3
     )
 ])
 
