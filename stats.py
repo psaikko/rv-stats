@@ -40,14 +40,24 @@ fig_cumulative = go.Figure(data=[
     go.Scatter(x=buy_df["date"], y=buy_df["cumulative_buys"], mode="lines", name="purchases"),
     go.Scatter(x=deposit_df["date"], y=deposit_df["cumulative_deposits"], mode="lines", name="deposits")
 ])
+fig_cumulative['layout']['title'] = "Cumulative deposits and purchases"
 
 item_purchase_counts = buy_df.groupby("item")["item"].count().sort_values(ascending=False)
-top_list_items = []
-for index, value in item_purchase_counts.head(10).items():
-    top_list_items.append(html.Li(str(value) + " " + index))
-top_list = html.Ul(top_list_items)
+top_list_rows = []
+for i, (item, count) in enumerate(item_purchase_counts.head(10).items()):
+    top_list_rows.append(html.Tr([
+            html.Td(str(i+1)),
+            html.Td(item),
+            html.Td(str(count))
+        ]))
+top_list = html.Table([
+    html.Thead(
+        html.Tr([html.Th(col) for col in ["Rank", "Item", "Count"]])
+    ),
+    html.Tbody(top_list_rows)
+])
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 
 app.layout = html.Div(children=[
     html.H1(children='RV Stats'),
