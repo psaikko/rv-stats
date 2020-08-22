@@ -77,10 +77,21 @@ hourly = buy_df.groupby("hour", as_index=False)
 print(hourly["price_cents"].sum())
 print(hourly["price_cents"].count())
 
+hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
+print(hourly_daily_counts)
+hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hour", values="price_cents")
+
+print(hourly_daily_mat.values)
+
 fig1 = px.histogram(buy_df,
     x="hour", 
     y="price_cents", 
     nbins=24)
+
+fig2 = go.Figure(data=go.Heatmap(
+    z=hourly_daily_mat.values,
+    x=sorted(buy_df["weekday"].unique()), 
+    y=sorted(buy_df["hour"].unique())))
 
 app = dash.Dash(__name__)
 
@@ -96,6 +107,10 @@ app.layout = html.Div(children=[
         figure=fig1
     ),
 
+    dcc.Graph(
+        id='time-heatmap',
+        figure=fig2
+    )
 ])
 
 if __name__ == '__main__':
