@@ -44,7 +44,7 @@ fig_cumulative['layout']['title'] = "Cumulative deposits and purchases"
 
 item_purchase_counts = buy_df.groupby("item")["item"].count().sort_values(ascending=False)
 top_list_rows = []
-for i, (item, count) in enumerate(item_purchase_counts.head(10).items()):
+for i, (item, count) in enumerate(item_purchase_counts.head(7).items()):
     top_list_rows.append(html.Tr([
             html.Td(str(i+1)),
             html.Td(item),
@@ -66,19 +66,32 @@ app.layout = html.Div(children=[
         Your RV data, visualized!.
     '''),
     html.H3(children="Top buys"),
-    top_list,
-    dcc.Graph(
-        id='hourly-buys',
-        figure=fig_hourly
-    ),
-    dcc.Graph(
-        id='hourly-coffee',
-        figure=fig_coffee
-    ),
-    dcc.Graph(
-        id='time-heatmap',
-        figure=fig_heatmap
-    ),
+
+    html.Div(children=[
+        html.Div(
+            top_list, 
+            style={'display': 'inline-block', 'vertical-align': 'top'}
+        ),
+        html.Div(
+            dcc.Graph(
+                id='hourly-buys',
+                figure=fig_hourly
+        ), style={'display': 'inline-block'})
+    ]),
+
+    html.Div(children=[
+        html.Div(
+            dcc.Graph(
+                id='hourly-coffee',
+                figure=fig_coffee
+            ), style={'display': 'inline-block'}),
+        html.Div(
+            dcc.Graph(
+                id='time-heatmap',
+                figure=fig_heatmap
+            ), style={'display': 'inline-block'})
+    ]),
+
     dcc.Graph(
         id="cumulative-buys",
         figure=fig_cumulative
