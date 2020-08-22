@@ -39,11 +39,10 @@ def add_range_slider(fig):
         )
     )
 
-buy_df, deposit_df, balance_df = read_from_file("rv.html")
+buy_df, deposit_df, balance_df = read_from_network()
 
 hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
 hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hour", values="price_cents").fillna(0)
-
 fig_heatmap = go.Figure(
     data=go.Heatmap(
         z=hourly_daily_mat.values,
@@ -204,4 +203,4 @@ def update_item_figure(selected_items):
     return fig_item
 
 if __name__ == '__main__':
-    app.run_server(debug=True) 
+    app.run_server(debug=False) 
