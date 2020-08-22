@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from rvdata import read_from_file
 
-buy_df, deposit_df = read_from_file("rv.html")
+buy_df, deposit_df, balance_df = read_from_file("rv.html")
 
 hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
 hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hour", values="price_cents").fillna(0)
@@ -57,6 +57,23 @@ top_list = html.Table([
     html.Tbody(top_list_rows)
 ])
 
+fig_balance = go.Figure()
+fig_balance.add_trace(
+    go.Scatter(
+        x=balance_df["date"], 
+        y=balance_df["balance"] * (balance_df["balance"] >= 0), 
+        fill='tozeroy',
+        name="Positive",
+        line=dict(color='green')))
+fig_balance.add_trace(
+    go.Scatter(
+        x=balance_df["date"], 
+        y=balance_df["balance"] * (balance_df["balance"] < 0), 
+        fill='tozeroy',
+        name="Negative",
+        line=dict(color='red')))
+fig_balance['layout']['title'] = "Account balance"
+
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 
 app.layout = html.Div(children=[
@@ -92,11 +109,19 @@ app.layout = html.Div(children=[
             ), style={'display': 'inline-block'})
     ]),
 
-    dcc.Graph(
-        id="cumulative-buys",
-        figure=fig_cumulative
-    )
+    html.Div(children=[
+        html.Div(
+            dcc.Graph(
+                id="cumulative-buys",
+                figure=fig_cumulative
+            ), style={'display': 'inline-block'}),
+        html.Div(
+            dcc.Graph(
+                id="account-balance",
+                figure=fig_balance
+            ), style={'display': 'inline-block'})
+    ])
 ])
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True) 

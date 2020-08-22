@@ -65,10 +65,17 @@ def read_from_file(filename):
     add_date_columns(buy_df)
     add_date_columns(deposit_df)
 
-    return buy_df, deposit_df
+    buy_df["amount_cents"] = buy_df["price_cents"].map(lambda x: -x)
+    balance_df = pd.concat(
+        [buy_df[["date", "amount_cents"]], deposit_df[["date", "amount_cents"]]],
+        ignore_index=True
+    ).sort_values(by=["date"]).reset_index(drop=True)
+    balance_df["balance"] = balance_df["amount_cents"].cumsum()
+
+    return buy_df, deposit_df, balance_df
 
 if __name__ == "__main__":
-    buy_df, deposit_df = read_from_file("rv.html")
+    buy_df, deposit_df, _ = read_from_file("rv.html")
 
     print(buy_df.describe())
     print(buy_df.head())
@@ -85,3 +92,15 @@ if __name__ == "__main__":
 
     item_counts = buy_df.groupby("item")["item"].count().sort_values(ascending=False)
     print(list(item_counts.head().index))
+
+    buy_df["amount_cents"] = buy_df["price_cents"].map(lambda x: -x)
+    balance_df = pd.concat(
+        [buy_df[["date", "amount_cents"]], deposit_df[["date", "amount_cents"]]],
+        ignore_index=True
+    ).sort_values(by=["date"]).reset_index(drop=True)
+    balance_df["balance"] = balance_df["amount_cents"].cumsum()
+    balance_df["is_negative"] = balance_df["balance"] < 0
+    print(balance_df.head())
+    print(len(balance_df))
+    print(len(buy_df))
+    print(len(deposit_df))
