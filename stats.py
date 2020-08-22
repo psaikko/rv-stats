@@ -48,7 +48,11 @@ fig_heatmap = go.Figure(
     data=go.Heatmap(
         z=hourly_daily_mat.values,
         x=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], 
-        y=sorted(buy_df["hour"].unique()))
+        y=sorted(buy_df["hour"].unique()),
+        colorscale=[[0.0, "rgb(255,255,255)"],
+                [0.33, "rgb(251,233,243)"],
+                [0.66, "rgb(25,70,220)"],
+                [1.0, "rgb(255,45,127)"]])
 )
 fig_heatmap['layout']['yaxis']['autorange'] = "reversed"
 fig_heatmap['layout']['title'] = "Activity map"
@@ -98,10 +102,8 @@ app.layout = html.Div(children=[
     html.H1(children='RV Stats'),
 
     html.Div(children='''
-        Your RV data, visualized!.
+        Your RV data, visualized!
     '''),
-
-    
 
     html.Div(children=[
         html.Div(
@@ -134,12 +136,13 @@ app.layout = html.Div(children=[
 
         html.Div([
             dcc.Graph(
-                id='hourly-by-item'
+                id='items-figure'
             ),
             dcc.Dropdown(
                 id='item-dropdown',
                 options=[{'label': i, 'value': i} for i in sorted(buy_df["item"].unique())],
-                value='Coffee'
+                value=['Coffee', 'Powerking energy drink'],
+                multi=True
             )
         ], className="six columns")
     ], className="row"),
@@ -175,23 +178,29 @@ def update_hourly_figure(selected_range):
     )
     return fig_hourly
 
-@app.callback(Output('hourly-by-item','figure'),
+@app.callback(Output('items-figure','figure'),
     [Input('item-dropdown', 'value')])
-def update_item_figure(selected_item):
-    item_df = buy_df[buy_df["item"] == selected_item]
+def update_item_figure(selected_items):
     fig_item = go.Figure()
-    fig_item.add_trace(go.Histogram(
-        x=item_df["hour"],
-        y=item_df["price_cents"],
-        histfunc="count",
-        xbins=dict(start=0,end=24,size=1)
-    ))
+    for item in selected_items:
+        item_df = buy_df[buy_df["item"] == item]
+        fig_item.add_trace(go.Histogram(
+            x=item_df["date"],
+            y=item_df["price_cents"],
+            histfunc="count",
+            name=item,
+            nbinsx=20
+        ))
     fig_item.update_layout(
-        title_text = "{} purchases by hour".format(selected_item),
-        xaxis = {"range":[0,24]}
+        title_text = ', '.join(selected_items) + " purchase trends",
+        xaxis = {"range":[buy_df["date"].min(),buy_df["date"].max()]},
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        )
     )
-    if selected_item == "Coffee":
-        fig_item.update_traces(marker_color='saddlebrown')
     return fig_item
 
 if __name__ == '__main__':
