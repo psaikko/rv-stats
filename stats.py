@@ -5,7 +5,7 @@ import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.express as px
 from dash.dependencies import Input, Output
-from rvdata import read_from_file
+from rvdata import read_from_network
 
 def add_range_slider(fig):
     # https://plotly.com/python/range-slider/#range-slider-with-vertically-stacked-subplots
@@ -39,7 +39,7 @@ def add_range_slider(fig):
         )
     )
 
-buy_df, deposit_df, balance_df = read_from_file("rv.html")
+buy_df, deposit_df, balance_df = read_from_network()
 
 hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
 hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hour", values="price_cents").fillna(0)

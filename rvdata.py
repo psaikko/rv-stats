@@ -1,6 +1,7 @@
 import lxml.html
 import pandas as pd
 from datetime import datetime
+import requests
 
 def parse_cents(s):
     return int(s.replace('.',''))
@@ -10,6 +11,7 @@ def unmangle_name(s):
     s = s.replace("Ãv", "v")
     s = s.replace("Ãp", "p")
     s = s.replace("ÃÃ", "Ã")
+    s = s.replace("Ãa", "a")
     return str(bytes(s, 'latin-1'), 'utf-8')
 
 def add_date_columns(df):
@@ -18,10 +20,34 @@ def add_date_columns(df):
     df["month"] = df["date"].map(lambda d : d.month)
     df["hour"] = df["date"].map(lambda d : d.hour)
 
-def read_from_file(filename):
+def read_from_network():
+    print("Input your RV login")
+    username = input("username: ")
+    password = input("password: ")
 
+    url = 'https://rv.tko-aly.fi/userauth.php'
+    payload = {
+        'username': username,
+        'passwd': password,
+        'login': 'Log in'
+    }
+
+    # session = requests.session()
+    r = requests.post(url, data=payload)
+    
+    if (r.ok):
+        return dfs_from_html(r.text)
+    else:
+        print("Unable to reach RV (HTTP {})".format(r.status_code))
+        exit(1)
+    
+
+def read_from_file(filename):
     f = open(filename, 'r', encoding="utf-8")
     s = f.read()
+    return dfs_from_html(s)
+
+def dfs_from_html(s):
     tree = lxml.html.fromstring(s)
     events = tree.cssselect('.right code')[:-1] # skip final line
 
