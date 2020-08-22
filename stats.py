@@ -4,6 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.express as px
+from dash.dependencies import Input, Output
 from rvdata import read_from_file
 
 def add_range_slider(fig):
@@ -42,22 +43,6 @@ buy_df, deposit_df, balance_df = read_from_file("rv.html")
 
 hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
 hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hour", values="price_cents").fillna(0)
-
-fig_hourly = px.histogram(buy_df,
-    labels={'price_cents':"purchases", 'hour':"Hour of day"},
-    x="hour", 
-    y="price_cents", 
-    nbins=24)
-fig_hourly['layout']['title'] = "Total purchases by hour"
-
-fig_coffee = px.histogram(buy_df[buy_df["item"] == "Coffee"],
-    labels={'price_cents':"coffees", 'hour':"Hour of day"},
-    x="hour", 
-    y="price_cents",
-    histfunc="count",
-    nbins=24)
-fig_coffee['layout']['title'] = "Total coffee consumption by hour"
-fig_coffee.update_traces(marker_color='saddlebrown')
 
 fig_heatmap = go.Figure(
     data=go.Heatmap(
@@ -107,6 +92,16 @@ fig_balance.add_trace(
 fig_balance['layout']['title'] = "Account balance"
 add_range_slider(fig_balance)
 
+coffee_df = buy_df[buy_df["item"] == "Coffee"]
+fig_coffee = px.histogram(coffee_df,
+    labels={'price_cents':"coffees", 'hour':"Hour of day"},
+    x="hour", 
+    y="price_cents",
+    histfunc="count",
+    nbins=24)
+fig_coffee['layout']['title'] = "Total coffee consumption by hour"
+fig_coffee.update_traces(marker_color='saddlebrown')
+
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 
 app.layout = html.Div(children=[
@@ -122,12 +117,21 @@ app.layout = html.Div(children=[
         html.Div(
             top_list, 
             style={'display': 'inline-block', 'vertical-align': 'top'}
+        )
+    ]),
+
+    html.Div([
+        dcc.Graph(
+            id='hourly-buys'
         ),
-        html.Div(
-            dcc.Graph(
-                id='hourly-buys',
-                figure=fig_hourly
-        ), style={'display': 'inline-block'})
+        dcc.RangeSlider(
+            id='year-range-slider',
+            min=balance_df['year'].min(),
+            max=balance_df['year'].max(),
+            value=[balance_df['year'].min(), balance_df['year'].max()],
+            marks={str(year): str(year) for year in balance_df["year"].unique()},
+            step=None
+        )
     ]),
 
     html.Div(children=[
@@ -156,6 +160,19 @@ app.layout = html.Div(children=[
             ), style={'display': 'inline-block'})
     ])
 ])
+
+@app.callback(Output('hourly-buys','figure'),
+    [Input('year-range-slider', 'value')])
+def update_hourly_figure(selected_range):
+    range_df = buy_df[buy_df["year"].between(selected_range[0], selected_range[1], inclusive=True)]
+    fig_hourly = px.histogram(range_df,
+        labels={'price_cents':"purchases", 'hour':"Hour of day"},
+        x="hour", 
+        y="price_cents",
+        histfunc="count",
+        nbins=24)
+    fig_hourly['layout']['title'] = "Total purchases by hour from {} to {}".format(*selected_range)
+    return fig_hourly
 
 if __name__ == '__main__':
     app.run_server(debug=True) 

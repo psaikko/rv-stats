@@ -14,6 +14,7 @@ def unmangle_name(s):
 
 def add_date_columns(df):
     df["weekday"] = df["date"].map(lambda d : d.weekday())
+    df["year"] = df["date"].map(lambda d : d.year)
     df["month"] = df["date"].map(lambda d : d.month)
     df["hour"] = df["date"].map(lambda d : d.hour)
 
@@ -71,6 +72,7 @@ def read_from_file(filename):
         ignore_index=True
     ).sort_values(by=["date"]).reset_index(drop=True)
     balance_df["balance"] = balance_df["amount_cents"].cumsum()
+    add_date_columns(balance_df)
 
     return buy_df, deposit_df, balance_df
 
