@@ -5,7 +5,7 @@ import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.express as px
 from dash.dependencies import Input, Output
-from rvdata import read_from_network
+from rvdata import read_from_network, read_from_file
 
 def add_range_slider(fig):
     # https://plotly.com/python/range-slider/#range-slider-with-vertically-stacked-subplots
@@ -39,7 +39,7 @@ def add_range_slider(fig):
         )
     )
 
-buy_df, deposit_df, balance_df = read_from_network()
+buy_df, deposit_df, balance_df = read_from_file("rv.html")
 
 hourly_daily_counts = buy_df.groupby(["hour", "weekday"], as_index=False)["price_cents"].count()
 hourly_daily_mat = hourly_daily_counts.pivot_table(columns="weekday", index="hour", values="price_cents").fillna(0)
@@ -101,58 +101,61 @@ app.layout = html.Div(children=[
         Your RV data, visualized!.
     '''),
 
-    html.H3(children="Top buys"),
+    
 
     html.Div(children=[
         html.Div(
-            top_list, 
-            style={'display': 'inline-block', 'vertical-align': 'top'}
+            [html.H3(children="Top buys"),
+            top_list], 
+            className="six columns"
+        ),
+        html.Div(
+            dcc.Graph(
+                id='time-heatmap',
+                figure=fig_heatmap
+            ), className="six columns"
         )
-    ]),
+    ], className="row"),
 
     html.Div([
-        dcc.Graph(
-            id='hourly-buys'
-        ),
-        dcc.RangeSlider(
-            id='year-range-slider',
-            min=balance_df['year'].min(),
-            max=balance_df['year'].max(),
-            value=[balance_df['year'].min(), balance_df['year'].max()],
-            marks={str(year): str(year) for year in balance_df["year"].unique()},
-            step=None
-        )
-    ]),
+        html.Div([
+            dcc.Graph(
+                id='hourly-buys'
+            ),
+            dcc.RangeSlider(
+                id='year-range-slider',
+                min=balance_df['year'].min(),
+                max=balance_df['year'].max(),
+                value=[balance_df['year'].min(), balance_df['year'].max()],
+                marks={str(year): str(year) for year in balance_df["year"].unique()},
+                step=None
+            )
+        ], className="six columns"),
 
-    html.Div([
-        dcc.Graph(
-            id='hourly-by-item'
-        ),
-        dcc.Dropdown(
-            id='item-dropdown',
-            options=[{'label': i, 'value': i} for i in sorted(buy_df["item"].unique())],
-            value='Coffee'
-        )
-    ]),
-
-    html.Div(
-        dcc.Graph(
-            id='time-heatmap',
-            figure=fig_heatmap
-        ), style={'display': 'inline-block'}),
+        html.Div([
+            dcc.Graph(
+                id='hourly-by-item'
+            ),
+            dcc.Dropdown(
+                id='item-dropdown',
+                options=[{'label': i, 'value': i} for i in sorted(buy_df["item"].unique())],
+                value='Coffee'
+            )
+        ], className="six columns")
+    ], className="row"),
 
     html.Div(children=[
         html.Div(
             dcc.Graph(
                 id="cumulative-buys",
                 figure=fig_cumulative
-            ), style={'display': 'inline-block'}),
+            ), className="six columns"),
         html.Div(
             dcc.Graph(
                 id="account-balance",
                 figure=fig_balance
-            ), style={'display': 'inline-block'})
-    ])
+            ), className="six columns")
+    ], className="row")
 ])
 
 @app.callback(Output('hourly-buys','figure'),
